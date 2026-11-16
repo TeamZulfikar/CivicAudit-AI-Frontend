@@ -54,7 +54,8 @@ export const TenderIngestion: React.FC<TenderIngestionProps> = ({
   const isAdmin = isAuthenticated && userRole === "admin";
   const isRegularUser = isAuthenticated && userRole !== "admin";
   const isGuest = !isAuthenticated;
-  const canAudit = isAuthenticated;
+  // Both admin and regular user roles have full forensic tribunal execution access
+  const canAudit = true;
 
   const sampleBoq = `Item 1: 20-Ton Hydraulic Crawler Excavator - Qty: 2 - Quoted: $58,000.00 each
 Item 2: Heavy-Duty Tandem Road Roller Compactor - Qty: 3 - Quoted: $42,500.00 each
@@ -105,13 +106,13 @@ Item 5: 150W Commercial Outdoor LED Street Luminaires - Qty: 120 units - Quoted:
             <div className="flex items-center gap-2 text-muted-foreground">
               <Lock className="w-4 h-4 text-primary shrink-0" />
               <span>
-                <strong className="text-foreground">Guest Mode:</strong> You can explore benchmark specifications. Sign in to your account to upload documents and trigger audits.
+                <strong className="text-foreground">Auditor Sandbox:</strong> You can convene tribunal benchmarks in guest mode. Sign in to your account to persist dossiers into the PostgreSQL vault.
               </span>
             </div>
             <Link href="/login">
-              <Button size="xs" className="h-7 text-xs gap-1 font-semibold cursor-pointer">
+              <Button size="xs" variant="outline" className="h-7 text-xs gap-1 font-semibold cursor-pointer border-border/80">
                 <LogIn className="w-3 h-3" />
-                <span>Sign In to Audit</span>
+                <span>Sign In to Save Vault</span>
               </Button>
             </Link>
           </div>
@@ -259,10 +260,7 @@ Item 5: 150W Commercial Outdoor LED Street Luminaires - Qty: 120 units - Quoted:
             <div
               onDragOver={(e) => e.preventDefault()}
               onDrop={handleDrop}
-              className={cn(
-                "border-2 border-dashed rounded-xl p-8 text-center transition-colors bg-muted/10",
-                !isAdmin ? "opacity-70 cursor-not-allowed border-border/40" : "border-border/80 hover:border-primary/60 cursor-pointer"
-              )}
+              className="border-2 border-dashed rounded-xl p-8 text-center transition-colors bg-muted/10 border-border/80 hover:border-primary/60 cursor-pointer"
             >
               <input
                 type="file"
@@ -270,11 +268,10 @@ Item 5: 150W Commercial Outdoor LED Street Luminaires - Qty: 120 units - Quoted:
                 className="hidden"
                 accept=".pdf,.docx,.xlsx,.xls,.csv,.json,.txt"
                 onChange={handleFileChange}
-                disabled={!isAdmin}
               />
               <label
                 htmlFor="fileUploadInput"
-                className={cn("flex flex-col items-center justify-center space-y-2", !isAdmin ? "cursor-not-allowed" : "cursor-pointer")}
+                className="flex flex-col items-center justify-center space-y-2 cursor-pointer"
               >
                 <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center">
                   <UploadCloud className="w-6 h-6" />

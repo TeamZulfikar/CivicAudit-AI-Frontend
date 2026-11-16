@@ -121,7 +121,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Center Navigation Links (Hero6 Standard) */}
           <nav aria-label="Main" className="hidden md:flex items-center gap-5 text-xs font-medium ml-2">
             <Link
-              href="/#tender-ingestion-console"
+              href="/tribunal"
               className="text-muted-foreground transition-colors hover:text-[#19c7e8]"
             >
               Tribunal Engine
@@ -147,6 +147,17 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             )}
             {isAdmin && (
+              <Link
+                href="/admin/users"
+                className="flex items-center gap-1.5 text-foreground hover:text-[#19c7e8] font-medium transition-colors cursor-pointer"
+              >
+                <span>Admin Operations</span>
+                <span className="text-[9px] font-mono uppercase px-1 py-0.2 bg-[#19c7e8]/15 text-[#19c7e8] border border-[#19c7e8]/30 rounded">
+                  Admin
+                </span>
+              </Link>
+            )}
+            {session && (
               <button
                 type="button"
                 onClick={onOpenSettings}
@@ -255,20 +266,18 @@ export const Header: React.FC<HeaderProps> = ({
                       <span className="text-[10px] font-mono text-muted-foreground">⌘K</span>
                     </button>
 
-                    {/* Admin Action: Council Settings */}
-                    {isAdmin && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setDropdownOpen(false);
-                          onOpenSettings();
-                        }}
-                        className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-foreground/90 hover:text-foreground hover:bg-muted/60 rounded-md transition-colors cursor-pointer text-left"
-                      >
-                        <SlidersHorizontal className="w-3.5 h-3.5 text-primary" />
-                        <span>AI Council & Settings</span>
-                      </button>
-                    )}
+                    {/* AI Council & Settings (Available for all authenticated users) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDropdownOpen(false);
+                        onOpenSettings();
+                      }}
+                      className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-foreground/90 hover:text-foreground hover:bg-muted/60 rounded-md transition-colors cursor-pointer text-left"
+                    >
+                      <SlidersHorizontal className="w-3.5 h-3.5 text-primary" />
+                      <span>AI Council & Settings</span>
+                    </button>
 
                     {/* Admin Action: User Registry */}
                     {isAdmin && (

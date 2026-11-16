@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useSidebar } from "@/components/SidebarContext";
+import { authClient } from "@/lib/auth-client";
 
 export interface AuditHistoryItem {
   id: string;
@@ -49,6 +50,9 @@ export const AdminDossierVault: React.FC = () => {
 
   const isOpen = sidebar?.isOpen ?? false;
   const setIsOpen = sidebar?.setIsOpen ?? (() => {});
+
+  const { data: session } = authClient.useSession();
+  const isAdmin = (session?.user as { role?: string } | undefined)?.role === "admin";
 
   const [audits, setAudits] = useState<AuditHistoryItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -138,7 +142,7 @@ export const AdminDossierVault: React.FC = () => {
 
   const handleNewAudit = () => {
     setIsOpen(false);
-    router.push("/");
+    router.push("/tribunal");
   };
 
   return (
@@ -228,15 +232,17 @@ export const AdminDossierVault: React.FC = () => {
                   <span>New Tender Investigation</span>
                 </button>
 
-                <Link
-                  href="/admin/users"
-                  onClick={() => setIsOpen(false)}
-                  className="flex items-center justify-center gap-1.5 rounded-[3px] border border-white/15 bg-white/5 text-white px-3 py-2 font-mono text-xs hover:bg-white/10 transition-colors"
-                  title="User Registry"
-                >
-                  <Users className="w-3.5 h-3.5 text-[#19c7e8]" />
-                  <span className="hidden sm:inline">Users</span>
-                </Link>
+                {isAdmin && (
+                  <Link
+                    href="/admin/users"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center justify-center gap-1.5 rounded-[3px] border border-white/15 bg-white/5 text-white px-3 py-2 font-mono text-xs hover:bg-white/10 transition-colors"
+                    title="Chief Integrity Officer User Registry & Operations"
+                  >
+                    <Users className="w-3.5 h-3.5 text-[#19c7e8]" />
+                    <span className="hidden sm:inline">Admin Ops</span>
+                  </Link>
+                )}
               </div>
 
               {/* Search Box */}

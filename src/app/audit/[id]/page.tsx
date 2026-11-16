@@ -24,6 +24,7 @@ import {
   Terminal,
   ExternalLink,
   ShieldAlert,
+  RotateCcw,
 } from "lucide-react";
 import { ExecutiveMetrics } from "@/components/ExecutiveMetrics";
 import { AuditCharts } from "@/components/AuditCharts";
@@ -256,7 +257,19 @@ export default function AuditDetailPage() {
         </div>
 
         {/* Header Actions */}
-        <div className="flex items-center gap-2 self-end sm:self-center">
+        <div className="flex items-center gap-2 self-end sm:self-center flex-wrap">
+          <Link href="/tribunal">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs gap-1.5 cursor-pointer border-[#19c7e8]/40 hover:bg-[#19c7e8]/10 text-foreground"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-[#19c7e8]" />
+              <span className="hidden sm:inline">New Tribunal Audit</span>
+              <span className="sm:hidden">New</span>
+            </Button>
+          </Link>
+
           {audit?.markdown && (
             <Button
               variant="outline"

@@ -28,28 +28,29 @@ export const CivicHero: React.FC<CivicHeroProps> = ({ onLaunchAudit }) => {
       <div className="w-full overflow-x-clip font-sans text-foreground">
         {/* Main Hero Framing Section */}
         <section className="border border-[#d1d5db] dark:border-white/15 bg-card/40 backdrop-blur-sm">
-          <div className="flex flex-col items-center px-4 sm:px-6 pb-12 pt-16 sm:pb-16 sm:pt-20 text-center">
+          <div className="flex flex-col items-center px-3 sm:px-6 pb-12 pt-14 sm:pb-16 sm:pt-20 text-center">
             {/* Top Announcement Pill */}
             <motion.div
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1, ease: EASE }}
-              className="mb-6 flex items-center gap-2 font-mono text-[9px] sm:text-[10px] uppercase tracking-wider text-muted-foreground"
+              className="mb-6 inline-flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 font-mono text-[9px] sm:text-[10px] uppercase tracking-wider text-muted-foreground text-center max-w-full px-2"
             >
-              <span aria-hidden="true" className="size-1.5 rounded-full bg-[#19c7e8] animate-pulse" />
-              Autonomous Procurement Integrity Tribunal{" "}
-              <span aria-hidden="true" className="text-muted-foreground/60">-</span>
-              <button
-                type="button"
-                onClick={scrollToIngestion}
-                className="text-[#19c7e8] hover:underline cursor-pointer font-semibold"
+              <span className="inline-flex items-center gap-1.5 shrink-0">
+                <span aria-hidden="true" className="size-1.5 rounded-full bg-[#19c7e8] animate-pulse shrink-0" />
+                <span>Autonomous Procurement Integrity Tribunal</span>
+              </span>
+              <span aria-hidden="true" className="text-muted-foreground/60 hidden xs:inline sm:inline">-</span>
+              <Link
+                href="/tribunal"
+                className="text-[#19c7e8] hover:underline cursor-pointer font-semibold whitespace-nowrap"
               >
                 Launch Audit Console
-              </button>
+              </Link>
             </motion.div>
 
             {/* Architectural Headline */}
-            <h1 className="max-w-4xl text-[clamp(2.2rem,5.5vw,4.2rem)] font-normal leading-[1.03] tracking-[-0.03em] text-foreground">
+            <h1 className="max-w-4xl text-[clamp(1.65rem,6vw,4.2rem)] font-normal leading-[1.08] sm:leading-[1.03] tracking-[-0.03em] text-foreground">
               <span className="block overflow-hidden pb-[0.06em]">
                 <motion.span
                   className="block font-medium"
@@ -89,13 +90,13 @@ export const CivicHero: React.FC<CivicHeroProps> = ({ onLaunchAudit }) => {
               transition={{ duration: 0.5, delay: 0.6, ease: EASE }}
               className="mt-8 flex flex-wrap justify-center gap-3.5"
             >
-              <button
-                type="button"
-                onClick={scrollToIngestion}
-                className="rounded-[3px] border border-[#d1d5db] dark:border-white/20 bg-[#19c7e8] text-black px-6 py-2.5 font-mono text-xs font-semibold transition-all hover:opacity-90 hover:shadow-[0_0_20px_rgba(25,199,232,0.4)] cursor-pointer"
+              <Link
+                href="/tribunal"
+                className="rounded-[3px] border border-[#d1d5db] dark:border-white/20 bg-[#19c7e8] text-black px-6 py-2.5 font-mono text-xs font-semibold transition-all hover:opacity-90 hover:shadow-[0_0_20px_rgba(25,199,232,0.4)] cursor-pointer inline-flex items-center gap-2"
               >
-                Launch Tribunal Audit
-              </button>
+                <span>Launch Tribunal Audit</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
 
               <a
                 href="#statutory-standards"
