@@ -157,7 +157,7 @@ export const Header: React.FC<HeaderProps> = ({
                 </span>
               </Link>
             )}
-            {isAdmin && (
+            {session && (
               <button
                 type="button"
                 onClick={onOpenSettings}
@@ -266,20 +266,18 @@ export const Header: React.FC<HeaderProps> = ({
                       <span className="text-[10px] font-mono text-muted-foreground">⌘K</span>
                     </button>
 
-                    {/* Admin Action: Council Settings */}
-                    {isAdmin && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setDropdownOpen(false);
-                          onOpenSettings();
-                        }}
-                        className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-foreground/90 hover:text-foreground hover:bg-muted/60 rounded-md transition-colors cursor-pointer text-left"
-                      >
-                        <SlidersHorizontal className="w-3.5 h-3.5 text-primary" />
-                        <span>AI Council & Settings</span>
-                      </button>
-                    )}
+                    {/* AI Council & Settings (Available for all authenticated users) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDropdownOpen(false);
+                        onOpenSettings();
+                      }}
+                      className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-foreground/90 hover:text-foreground hover:bg-muted/60 rounded-md transition-colors cursor-pointer text-left"
+                    >
+                      <SlidersHorizontal className="w-3.5 h-3.5 text-primary" />
+                      <span>AI Council & Settings</span>
+                    </button>
 
                     {/* Admin Action: User Registry */}
                     {isAdmin && (
