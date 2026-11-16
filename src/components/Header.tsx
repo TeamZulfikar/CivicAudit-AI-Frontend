@@ -147,6 +147,17 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             )}
             {isAdmin && (
+              <Link
+                href="/admin/users"
+                className="flex items-center gap-1.5 text-foreground hover:text-[#19c7e8] font-medium transition-colors cursor-pointer"
+              >
+                <span>Admin Operations</span>
+                <span className="text-[9px] font-mono uppercase px-1 py-0.2 bg-[#19c7e8]/15 text-[#19c7e8] border border-[#19c7e8]/30 rounded">
+                  Admin
+                </span>
+              </Link>
+            )}
+            {isAdmin && (
               <button
                 type="button"
                 onClick={onOpenSettings}

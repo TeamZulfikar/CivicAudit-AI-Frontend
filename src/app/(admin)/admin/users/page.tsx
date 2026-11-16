@@ -24,6 +24,9 @@ import {
   AlertCircle,
   Database,
   SlidersHorizontal,
+  Download,
+  Clock,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -143,6 +146,74 @@ export default function AdminUsersPage() {
       }
     } catch {
       alert("Error updating ban status");
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
+  const [purgingSessions, setPurgingSessions] = useState(false);
+  const handlePurgeSessions = async () => {
+    if (!confirm("Run administrative operation: purge expired sessions from PostgreSQL?")) {
+      return;
+    }
+    setPurgingSessions(true);
+    try {
+      const res = await fetch("/api/admin/operations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "purge-sessions" }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(data.message || "Expired sessions purged successfully.");
+        fetchUsers();
+      } else {
+        alert(`Failed to purge sessions: ${data.error}`);
+      }
+    } catch {
+      alert("Error executing session purge operation.");
+    } finally {
+      setPurgingSessions(false);
+    }
+  };
+
+  const handleExportUsers = () => {
+    const dataStr =
+      "data:text/json;charset=utf-8," +
+      encodeURIComponent(JSON.stringify(users, null, 2));
+    const downloadAnchor = document.createElement("a");
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute(
+      "download",
+      `civicaudit_users_${new Date().toISOString().split("T")[0]}.json`
+    );
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  };
+
+  const handleDeleteUser = async (targetUser: UserListItem) => {
+    if (
+      !confirm(
+        `DANGER: Are you sure you want to permanently delete user "${targetUser.name}" (${targetUser.email}) from PostgreSQL? This action cannot be undone.`
+      )
+    ) {
+      return;
+    }
+
+    setUpdatingUserId(targetUser.id);
+    try {
+      const res = await fetch(`/api/admin/users/${targetUser.id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setUsers((prev) => prev.filter((u) => u.id !== targetUser.id));
+      } else {
+        const data = await res.json();
+        alert(`Failed to delete user: ${data.error}`);
+      }
+    } catch {
+      alert("Error deleting user");
     } finally {
       setUpdatingUserId(null);
     }
@@ -298,6 +369,48 @@ export default function AdminUsersPage() {
           </span>
           <div className="text-2xl font-bold font-mono text-destructive">{bannedCount}</div>
           <span className="text-[11px] text-muted-foreground">Banned or Suspended</span>
+        </div>
+      </div>
+
+      {/* Admin Operations Command Center */}
+      <div className="p-3.5 sm:p-4 rounded-[4px] border border-[#19c7e8]/30 dark:bg-[#061720]/80 backdrop-blur-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-[3px] bg-[#19c7e8]/10 border border-[#19c7e8]/30 flex items-center justify-center text-[#19c7e8] shrink-0">
+            <ShieldAlert className="w-4 h-4" />
+          </div>
+          <div>
+            <span className="font-semibold text-foreground text-xs sm:text-sm block">
+              Chief Integrity Administrative Operations
+            </span>
+            <span className="text-[11px] text-muted-foreground">
+              Run identity governance, prune expired sessions, or export user registries.
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap w-full md:w-auto justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handlePurgeSessions}
+            disabled={purgingSessions}
+            className="h-8 text-xs font-mono gap-1.5 border-border/80 hover:bg-muted cursor-pointer"
+            title="Clean expired session records from PostgreSQL"
+          >
+            <Clock className={`w-3.5 h-3.5 ${purgingSessions ? "animate-spin text-amber-500" : "text-amber-500"}`} />
+            <span>{purgingSessions ? "Pruning..." : "Prune Expired Sessions"}</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportUsers}
+            className="h-8 text-xs font-mono gap-1.5 border-[#19c7e8]/40 hover:bg-[#19c7e8]/10 text-foreground cursor-pointer"
+            title="Export complete user dataset as JSON"
+          >
+            <Download className="w-3.5 h-3.5 text-[#19c7e8]" />
+            <span>Export Registry (.json)</span>
+          </Button>
         </div>
       </div>
 
@@ -499,11 +612,24 @@ export default function AdminUsersPage() {
                               className={`h-7 text-[11px] font-mono cursor-pointer ${
                                 user.banned
                                   ? "text-emerald-500 border-emerald-500/30 hover:bg-emerald-500/10"
-                                  : "text-destructive border-destructive/30 hover:bg-destructive/10"
+                                  : "text-amber-500 border-amber-500/30 hover:bg-amber-500/10"
                               }`}
                               title={user.banned ? "Unban user" : "Ban user"}
                             >
                               {user.banned ? "Unban" : "Ban"}
+                            </Button>
+                          )}
+
+                          {!isCurrentAdmin && (
+                            <Button
+                              variant="outline"
+                              size="xs"
+                              disabled={isBusy}
+                              onClick={() => handleDeleteUser(user)}
+                              className="h-7 px-2 text-[11px] font-mono text-destructive border-destructive/30 hover:bg-destructive/10 cursor-pointer"
+                              title="Permanently delete user from database"
+                            >
+                              <Trash2 className="w-3 h-3" />
                             </Button>
                           )}
                         </div>
