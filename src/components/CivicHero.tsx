@@ -41,13 +41,12 @@ export const CivicHero: React.FC<CivicHeroProps> = ({ onLaunchAudit }) => {
                 <span>Autonomous Procurement Integrity Tribunal</span>
               </span>
               <span aria-hidden="true" className="text-muted-foreground/60 hidden xs:inline sm:inline">-</span>
-              <button
-                type="button"
-                onClick={scrollToIngestion}
+              <Link
+                href="/tribunal"
                 className="text-[#19c7e8] hover:underline cursor-pointer font-semibold whitespace-nowrap"
               >
                 Launch Audit Console
-              </button>
+              </Link>
             </motion.div>
 
             {/* Architectural Headline */}
@@ -91,13 +90,13 @@ export const CivicHero: React.FC<CivicHeroProps> = ({ onLaunchAudit }) => {
               transition={{ duration: 0.5, delay: 0.6, ease: EASE }}
               className="mt-8 flex flex-wrap justify-center gap-3.5"
             >
-              <button
-                type="button"
-                onClick={scrollToIngestion}
-                className="rounded-[3px] border border-[#d1d5db] dark:border-white/20 bg-[#19c7e8] text-black px-6 py-2.5 font-mono text-xs font-semibold transition-all hover:opacity-90 hover:shadow-[0_0_20px_rgba(25,199,232,0.4)] cursor-pointer"
+              <Link
+                href="/tribunal"
+                className="rounded-[3px] border border-[#d1d5db] dark:border-white/20 bg-[#19c7e8] text-black px-6 py-2.5 font-mono text-xs font-semibold transition-all hover:opacity-90 hover:shadow-[0_0_20px_rgba(25,199,232,0.4)] cursor-pointer inline-flex items-center gap-2"
               >
-                Launch Tribunal Audit
-              </button>
+                <span>Launch Tribunal Audit</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
 
               <a
                 href="#statutory-standards"

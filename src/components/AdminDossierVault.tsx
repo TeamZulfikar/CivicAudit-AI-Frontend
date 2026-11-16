@@ -142,7 +142,7 @@ export const AdminDossierVault: React.FC = () => {
 
   const handleNewAudit = () => {
     setIsOpen(false);
-    router.push("/");
+    router.push("/tribunal");
   };
 
   return (

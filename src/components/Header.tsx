@@ -121,7 +121,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Center Navigation Links (Hero6 Standard) */}
           <nav aria-label="Main" className="hidden md:flex items-center gap-5 text-xs font-medium ml-2">
             <Link
-              href="/#tender-ingestion-console"
+              href="/tribunal"
               className="text-muted-foreground transition-colors hover:text-[#19c7e8]"
             >
               Tribunal Engine
