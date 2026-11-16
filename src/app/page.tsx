@@ -28,9 +28,9 @@ export default function Home() {
   const [auditResult, setAuditResult] = useState<AuditResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Helper to persist audit run state to PostgreSQL and notify sidebar
+  // Helper to persist audit run state to PostgreSQL and notify sidebar/vault
   const persistAuditRun = async (payload: Record<string, unknown>): Promise<string | null> => {
-    if (!isAdmin) return null;
+    if (!isAuthenticated) return null;
     try {
       const res = await fetch("/api/audits", {
         method: "POST",
@@ -62,7 +62,7 @@ export default function Home() {
     });
 
     let dbAuditId: string | null = null;
-    if (isAdmin) {
+    if (isAuthenticated) {
       dbAuditId = await persistAuditRun({
         tenderId: sample.replace(".json", "").toUpperCase(),
         title: `Benchmark Audit: ${sample}`,
@@ -136,7 +136,7 @@ export default function Home() {
     });
 
     let dbAuditId: string | null = null;
-    if (isAdmin) {
+    if (isAuthenticated) {
       dbAuditId = await persistAuditRun({
         tenderId: tenderId || "CUSTOM-TND-2025",
         title: title || "Custom Tender Audit",
@@ -216,7 +216,7 @@ export default function Home() {
     });
 
     let dbAuditId: string | null = null;
-    if (isAdmin) {
+    if (isAuthenticated) {
       dbAuditId = await persistAuditRun({
         tenderId: tenderId || "UPLOAD-TND-2025",
         title: title || `Document: ${file.name}`,

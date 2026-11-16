@@ -54,6 +54,7 @@ export const TenderIngestion: React.FC<TenderIngestionProps> = ({
   const isAdmin = isAuthenticated && userRole === "admin";
   const isRegularUser = isAuthenticated && userRole !== "admin";
   const isGuest = !isAuthenticated;
+  const canAudit = isAuthenticated;
 
   const sampleBoq = `Item 1: 20-Ton Hydraulic Crawler Excavator - Qty: 2 - Quoted: $58,000.00 each
 Item 2: Heavy-Duty Tandem Road Roller Compactor - Qty: 3 - Quoted: $42,500.00 each
@@ -104,7 +105,7 @@ Item 5: 150W Commercial Outdoor LED Street Luminaires - Qty: 120 units - Quoted:
             <div className="flex items-center gap-2 text-muted-foreground">
               <Lock className="w-4 h-4 text-primary shrink-0" />
               <span>
-                <strong className="text-foreground">Guest Mode:</strong> You can explore benchmark specifications. Sign in with an <strong className="text-primary font-mono">admin</strong> account to upload documents and trigger audits.
+                <strong className="text-foreground">Guest Mode:</strong> You can explore benchmark specifications. Sign in to your account to upload documents and trigger audits.
               </span>
             </div>
             <Link href="/login">
@@ -117,14 +118,15 @@ Item 5: 150W Commercial Outdoor LED Street Luminaires - Qty: 120 units - Quoted:
         )}
 
         {isRegularUser && (
-          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center gap-2.5 text-xs text-amber-500">
-            <ShieldAlert className="w-4 h-4 shrink-0" />
-            <div>
-              <span className="font-semibold">Read-Only Permission (Role: {userRole || "user"}):</span>
-              <p className="text-amber-500/90 text-[11px] mt-0.5">
-                Regular users can inspect public benchmark items. Only designated Administrators have permission to upload files, supply custom contracts, or convene autonomous tribunal audits.
-              </p>
+          <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-between text-xs text-primary">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4" />
+              <span className="font-semibold">Auditor Access Active (Role: {userRole || "user"})</span>
+              <span className="text-[11px] text-muted-foreground hidden sm:inline">&bull; Full upload and tribunal convening privileges enabled.</span>
             </div>
+            <Badge variant="outline" className="text-[9px] font-mono uppercase bg-background border-primary/30">
+              Auditor Verified
+            </Badge>
           </div>
         )}
 
@@ -217,7 +219,7 @@ Item 5: 150W Commercial Outdoor LED Street Luminaires - Qty: 120 units - Quoted:
             </div>
 
             <div className="flex justify-end pt-1">
-              {isAdmin ? (
+              {canAudit ? (
                 <Button
                   onClick={() => {
                     const sel = (document.getElementById("sampleSelect") as HTMLSelectElement).value;
@@ -239,18 +241,13 @@ Item 5: 150W Commercial Outdoor LED Street Luminaires - Qty: 120 units - Quoted:
                     </>
                   )}
                 </Button>
-              ) : isGuest ? (
+              ) : (
                 <Link href="/login">
                   <Button variant="outline" className="gap-2 h-9 px-4 text-xs font-medium cursor-pointer border-primary/40 text-primary">
                     <LogIn className="w-3.5 h-3.5" />
                     <span>Sign in to Convene Tribunal</span>
                   </Button>
                 </Link>
-              ) : (
-                <Button disabled variant="outline" className="gap-2 h-9 px-4 text-xs font-medium opacity-60">
-                  <Lock className="w-3.5 h-3.5" />
-                  <span>Admin Privileges Required to Audit</span>
-                </Button>
               )}
             </div>
           </div>
@@ -326,7 +323,7 @@ Item 5: 150W Commercial Outdoor LED Street Luminaires - Qty: 120 units - Quoted:
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
                       className="text-xs h-8"
-                      disabled={!isAdmin}
+                      disabled={!canAudit}
                     />
                   </div>
                   <div>
@@ -336,7 +333,7 @@ Item 5: 150W Commercial Outdoor LED Street Luminaires - Qty: 120 units - Quoted:
                       value={entity}
                       onChange={(e) => setEntity(e.target.value)}
                       className="text-xs h-8"
-                      disabled={!isAdmin}
+                      disabled={!canAudit}
                     />
                   </div>
                   <div>
@@ -346,7 +343,7 @@ Item 5: 150W Commercial Outdoor LED Street Luminaires - Qty: 120 units - Quoted:
                       value={tenderId}
                       onChange={(e) => setTenderId(e.target.value)}
                       className="text-xs font-mono h-8"
-                      disabled={!isAdmin}
+                      disabled={!canAudit}
                     />
                   </div>
                 </div>
@@ -354,7 +351,7 @@ Item 5: 150W Commercial Outdoor LED Street Luminaires - Qty: 120 units - Quoted:
             </div>
 
             <div className="flex justify-end pt-2">
-              {isAdmin ? (
+              {canAudit ? (
                 <Button
                   onClick={() => selectedFile && onUploadAndAudit(selectedFile, title, entity, tenderId)}
                   disabled={isLoading || !selectedFile}
@@ -373,18 +370,13 @@ Item 5: 150W Commercial Outdoor LED Street Luminaires - Qty: 120 units - Quoted:
                     </>
                   )}
                 </Button>
-              ) : isGuest ? (
+              ) : (
                 <Link href="/login">
                   <Button variant="outline" className="gap-2 h-9 px-4 text-xs font-medium cursor-pointer border-primary/40 text-primary">
                     <LogIn className="w-3.5 h-3.5" />
                     <span>Sign in to Upload & Audit</span>
                   </Button>
                 </Link>
-              ) : (
-                <Button disabled variant="outline" className="gap-2 h-9 px-4 text-xs font-medium opacity-60">
-                  <Lock className="w-3.5 h-3.5" />
-                  <span>Admin Upload Privileges Required</span>
-                </Button>
               )}
             </div>
           </div>
@@ -410,12 +402,12 @@ Item 5: 150W Commercial Outdoor LED Street Luminaires - Qty: 120 units - Quoted:
                 onChange={(e) => setRawText(e.target.value)}
                 placeholder="Paste items with quantities and quoted rates (e.g., '10x Enterprise Core i7 Workstations @ $2,450.00 each')..."
                 className="font-mono text-xs leading-relaxed"
-                disabled={!isAdmin}
+                disabled={!canAudit}
               />
             </div>
 
             <div className="flex justify-end pt-1">
-              {isAdmin ? (
+              {canAudit ? (
                 <Button
                   onClick={() => rawText.trim() && onAuditCustom(title, entity, tenderId, rawText)}
                   disabled={isLoading || !rawText.trim()}
@@ -434,18 +426,13 @@ Item 5: 150W Commercial Outdoor LED Street Luminaires - Qty: 120 units - Quoted:
                     </>
                   )}
                 </Button>
-              ) : isGuest ? (
+              ) : (
                 <Link href="/login">
                   <Button variant="outline" className="gap-2 h-9 px-4 text-xs font-medium cursor-pointer border-primary/40 text-primary">
                     <LogIn className="w-3.5 h-3.5" />
                     <span>Sign in to Audit Custom Text</span>
                   </Button>
                 </Link>
-              ) : (
-                <Button disabled variant="outline" className="gap-2 h-9 px-4 text-xs font-medium opacity-60">
-                  <Lock className="w-3.5 h-3.5" />
-                  <span>Admin Privileges Required to Audit</span>
-                </Button>
               )}
             </div>
           </div>

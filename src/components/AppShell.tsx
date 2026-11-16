@@ -19,6 +19,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const { data: session } = authClient.useSession();
   const userRole = (session?.user as { role?: string } | undefined)?.role || null;
   const isAdmin = userRole === "admin";
+  const isAuthenticated = !!session?.user;
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [currentSettings, setCurrentSettings] = useState<SettingsResponse | null>(null);
@@ -63,8 +64,8 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           {children}
         </div>
 
-        {/* Forensic Dossier Vault (Exclusive to Admins) */}
-        {!isAuthPage && isAdmin && <AdminDossierVault />}
+        {/* Forensic Dossier Vault (Accessible to both user and admin roles) */}
+        {!isAuthPage && isAuthenticated && <AdminDossierVault />}
 
         {/* Diagonal Hatched Divider above footer */}
         <div
