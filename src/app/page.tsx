@@ -1,28 +1,26 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Header } from "@/components/Header";
-import { SettingsModal } from "@/components/SettingsModal";
+import React, { useState } from "react";
 import { TenderIngestion } from "@/components/TenderIngestion";
+import { CivicHero } from "@/components/CivicHero";
 import { ExecutiveMetrics } from "@/components/ExecutiveMetrics";
+import { AuditCharts } from "@/components/AuditCharts";
 import { AnomalyTable } from "@/components/AnomalyTable";
 import { LegalAdvisory } from "@/components/LegalAdvisory";
 import { AuditLogs } from "@/components/AuditLogs";
 import { LiveAuditProgress } from "@/components/LiveAuditProgress";
-import {
-  fetchSettings,
-  streamAudit,
-} from "@/lib/api";
-import { AuditResponse, SettingsResponse, AuditProgressData } from "@/types/audit";
-import { AlertCircle, RotateCcw, ShieldCheck } from "lucide-react";
+import { streamAudit } from "@/lib/api";
+import { AuditResponse, AuditProgressData } from "@/types/audit";
+import { AlertCircle, RotateCcw, ShieldCheck, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { authClient } from "@/lib/auth-client";
 
 export default function Home() {
-  const [activeBrain, setActiveBrain] = useState<string>("Auto Cascade");
-  const [councilMode, setCouncilMode] = useState<string>("llm");
-  const [currentSettings, setCurrentSettings] = useState<SettingsResponse | null>(null);
-  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  const { data: session } = authClient.useSession();
+  const userRole = (session?.user as { role?: string } | undefined)?.role || null;
+  const isAdmin = userRole === "admin";
+  const isAuthenticated = !!session?.user;
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [liveProgress, setLiveProgress] = useState<AuditProgressData | null>(null);
@@ -30,20 +28,25 @@ export default function Home() {
   const [auditResult, setAuditResult] = useState<AuditResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Load initial settings from backend server
-  useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        const data = await fetchSettings();
-        setCurrentSettings(data);
-        setActiveBrain(data.active_brain);
-        setCouncilMode(data.council_mode);
-      } catch (err: unknown) {
-        console.warn("Backend settings fetch error:", err);
+  // Helper to persist audit run state to PostgreSQL and notify sidebar
+  const persistAuditRun = async (payload: Record<string, unknown>): Promise<string | null> => {
+    if (!isAdmin) return null;
+    try {
+      const res = await fetch("/api/audits", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        window.dispatchEvent(new Event("audit-created"));
+        return data.audit?.id || null;
       }
-    };
-    loadSettings();
-  }, []);
+    } catch (err) {
+      console.warn("Failed to persist audit to database:", err);
+    }
+    return null;
+  };
 
   const handleAuditPreloaded = async (sample: string) => {
     setIsLoading(true);
@@ -58,6 +61,18 @@ export default function Home() {
       anomalies_count: 0,
     });
 
+    let dbAuditId: string | null = null;
+    if (isAdmin) {
+      dbAuditId = await persistAuditRun({
+        tenderId: sample.replace(".json", "").toUpperCase(),
+        title: `Benchmark Audit: ${sample}`,
+        procuringEntity: "Preloaded Municipal Docket",
+        mode: "sample",
+        sampleName: sample,
+        status: "in_progress",
+      });
+    }
+
     try {
       const res = await streamAudit(
         { mode: "sample", sample },
@@ -71,8 +86,32 @@ export default function Home() {
         }
       );
       setAuditResult(res);
+
+      if (dbAuditId) {
+        await persistAuditRun({
+          id: dbAuditId,
+          status: "completed",
+          totalQuoted: res.dossier.total_quoted_budget,
+          fairMarket: res.dossier.fair_market_estimated_budget,
+          excessAmount: res.dossier.potential_taxpayer_loss,
+          riskRating: res.dossier.risk_tier,
+          findingsCount: res.dossier.findings.length,
+          anomaliesCount: res.dossier.findings.filter((i) => i.risk_level !== "NORMAL").length,
+          dossier: res.dossier,
+          markdown: res.markdown,
+          logs: res.logs,
+        });
+      }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Audit execution failed");
+      const msg = err instanceof Error ? err.message : "Audit execution failed";
+      setError(msg);
+      if (dbAuditId) {
+        await persistAuditRun({
+          id: dbAuditId,
+          status: "failed",
+          error: msg,
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -96,6 +135,18 @@ export default function Home() {
       anomalies_count: 0,
     });
 
+    let dbAuditId: string | null = null;
+    if (isAdmin) {
+      dbAuditId = await persistAuditRun({
+        tenderId: tenderId || "CUSTOM-TND-2025",
+        title: title || "Custom Tender Audit",
+        procuringEntity: entity || "Public Authority",
+        mode: "custom",
+        rawText: text,
+        status: "in_progress",
+      });
+    }
+
     try {
       const res = await streamAudit(
         {
@@ -115,8 +166,32 @@ export default function Home() {
         }
       );
       setAuditResult(res);
+
+      if (dbAuditId) {
+        await persistAuditRun({
+          id: dbAuditId,
+          status: "completed",
+          totalQuoted: res.dossier.total_quoted_budget,
+          fairMarket: res.dossier.fair_market_estimated_budget,
+          excessAmount: res.dossier.potential_taxpayer_loss,
+          riskRating: res.dossier.risk_tier,
+          findingsCount: res.dossier.findings.length,
+          anomaliesCount: res.dossier.findings.filter((i) => i.risk_level !== "NORMAL").length,
+          dossier: res.dossier,
+          markdown: res.markdown,
+          logs: res.logs,
+        });
+      }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Custom audit failed");
+      const msg = err instanceof Error ? err.message : "Custom audit failed";
+      setError(msg);
+      if (dbAuditId) {
+        await persistAuditRun({
+          id: dbAuditId,
+          status: "failed",
+          error: msg,
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -139,6 +214,18 @@ export default function Home() {
       total_items: 0,
       anomalies_count: 0,
     });
+
+    let dbAuditId: string | null = null;
+    if (isAdmin) {
+      dbAuditId = await persistAuditRun({
+        tenderId: tenderId || "UPLOAD-TND-2025",
+        title: title || `Document: ${file.name}`,
+        procuringEntity: entity || "Public Authority",
+        mode: "upload",
+        filename: file.name,
+        status: "in_progress",
+      });
+    }
 
     try {
       const reader = new FileReader();
@@ -168,8 +255,32 @@ export default function Home() {
         }
       );
       setAuditResult(res);
+
+      if (dbAuditId) {
+        await persistAuditRun({
+          id: dbAuditId,
+          status: "completed",
+          totalQuoted: res.dossier.total_quoted_budget,
+          fairMarket: res.dossier.fair_market_estimated_budget,
+          excessAmount: res.dossier.potential_taxpayer_loss,
+          riskRating: res.dossier.risk_tier,
+          findingsCount: res.dossier.findings.length,
+          anomaliesCount: res.dossier.findings.filter((i) => i.risk_level !== "NORMAL").length,
+          dossier: res.dossier,
+          markdown: res.markdown,
+          logs: res.logs,
+        });
+      }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Upload audit failed");
+      const msg = err instanceof Error ? err.message : "Upload audit failed";
+      setError(msg);
+      if (dbAuditId) {
+        await persistAuditRun({
+          id: dbAuditId,
+          status: "failed",
+          error: msg,
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -182,46 +293,57 @@ export default function Home() {
     setLiveLogs([]);
   };
 
+  const handleDownloadMarkdown = () => {
+    if (!auditResult?.markdown) return;
+    const blob = new Blob([auditResult.markdown], { type: "text/markdown;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `CivicAudit_${auditResult.dossier.tender_id || "Report"}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary selection:text-primary-foreground font-sans">
-      {/* Navigation Header */}
-      <Header
-        activeBrain={activeBrain}
-        councilMode={councilMode}
-        onOpenSettings={() => setIsSettingsOpen(true)}
-      />
+    <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+      {/* Architectural Civic Hero Section */}
+      {!auditResult && !isLoading && (
+        <CivicHero
+          onLaunchAudit={() => {
+            const el = document.getElementById("tender-ingestion-console");
+            if (el) el.scrollIntoView({ behavior: "smooth" });
+          }}
+        />
+      )}
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
-        {/* Hero Section */}
-        {!auditResult && !isLoading && (
-          <div className="text-center max-w-2xl mx-auto space-y-3 pt-2 pb-1">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Public Procurement Integrity Tribunal</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground">
-              Autonomous Multi-Agent{" "}
-              <span className="text-primary">Procurement Forensics</span>
-            </h2>
-            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-              Cross-examines tender line items against wholesale market telemetry to detect statutory markups, fiscal leakage, and contractor price collusion.
-            </p>
-          </div>
-        )}
-
-        {/* Input & Ingestion Section */}
-        {!auditResult && !isLoading ? (
+      {/* Input & Ingestion Section with RBAC Gates */}
+      {!auditResult && !isLoading ? (
+        <div id="tender-ingestion-console" className="pt-2">
           <TenderIngestion
             onAuditPreloaded={handleAuditPreloaded}
             onAuditCustom={handleAuditCustom}
             onUploadAndAudit={handleUploadAndAudit}
             isLoading={isLoading}
+            userRole={userRole}
+            isAuthenticated={isAuthenticated}
           />
-        ) : auditResult && !isLoading ? (
-          <Card className="flex flex-row justify-between items-center px-4 py-3 border-border/50 bg-card/60 shadow-sm">
-            <div className="text-xs text-muted-foreground">
-              Auditing Docket: <strong className="text-foreground">#{auditResult.dossier.tender_id}</strong> &bull; {auditResult.dossier.findings.length} line items reviewed
-            </div>
+        </div>
+      ) : auditResult && !isLoading ? (
+        <Card className="flex flex-row justify-between items-center px-4 py-3 border-border/50 bg-card/60 shadow-sm">
+          <div className="text-xs text-muted-foreground">
+            Auditing Docket: <strong className="text-foreground">#{auditResult.dossier.tender_id}</strong> &bull; {auditResult.dossier.findings.length} line items reviewed
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownloadMarkdown}
+              className="h-8 text-xs gap-1.5 cursor-pointer border-border/60"
+            >
+              <Download className="w-3.5 h-3.5 text-primary" />
+              <span>Download Dossier</span>
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -231,81 +353,79 @@ export default function Home() {
               <RotateCcw className="w-3.5 h-3.5 text-primary" />
               <span>Audit Another Tender</span>
             </Button>
-          </Card>
-        ) : null}
+          </div>
+        </Card>
+      ) : null}
 
-        {/* Real-Time Live Streaming Progress Tracker */}
-        {isLoading && (
-          <LiveAuditProgress
-            progress={liveProgress}
-            liveLogs={liveLogs}
-          />
-        )}
+      {/* Real-Time Live Streaming Progress Tracker */}
+      {isLoading && (
+        <LiveAuditProgress
+          progress={liveProgress}
+          liveLogs={liveLogs}
+        />
+      )}
 
-        {/* Error notification */}
-        {error && (
-          <Card className="p-4 border-destructive/40 bg-destructive/10 text-destructive text-xs flex items-center justify-between gap-3 shadow-lg">
-            <div className="flex items-center gap-2.5">
-              <AlertCircle className="w-5 h-5 text-destructive shrink-0" />
-              <div>
-                <span className="font-bold">Investigation Encountered an Error:</span>
-                <p className="text-destructive/90 mt-0.5">{error}</p>
-              </div>
+      {/* Error notification */}
+      {error && (
+        <Card className="p-4 border-destructive/40 bg-destructive/10 text-destructive text-xs flex items-center justify-between gap-3 shadow-lg">
+          <div className="flex items-center gap-2.5">
+            <AlertCircle className="w-5 h-5 text-destructive shrink-0" />
+            <div>
+              <span className="font-bold">Investigation Encountered an Error:</span>
+              <p className="text-destructive/90 mt-0.5">{error}</p>
             </div>
-            <Button
-              variant="link"
-              size="xs"
-              onClick={() => setError(null)}
-              className="text-xs text-destructive hover:underline p-0 h-auto cursor-pointer"
-            >
-              Dismiss
-            </Button>
-          </Card>
-        )}
-
-        {/* Forensic Results Dashboard */}
-        {auditResult && !isLoading && (
-          <div className="space-y-6 animate-in fade-in-50 duration-300">
-            {/* Top KPIs & Composite Risk Gauge */}
-            <ExecutiveMetrics dossier={auditResult.dossier} />
-
-            {/* Anomaly Table with Expandable Tribunal Deliberation Cards */}
-            <AnomalyTable findings={auditResult.dossier.findings} />
-
-            {/* Executive Memorandum, Statutory Violations & Advisory */}
-            <LegalAdvisory
-              dossier={auditResult.dossier}
-              markdown={auditResult.markdown}
-            />
-
-            {/* Live Telemetry Log Stream */}
-            <AuditLogs logs={auditResult.logs} />
           </div>
-        )}
-      </main>
+          <Button
+            variant="link"
+            size="xs"
+            onClick={() => setError(null)}
+            className="text-xs text-destructive hover:underline p-0 h-auto cursor-pointer"
+          >
+            Dismiss
+          </Button>
+        </Card>
+      )}
 
-      {/* Footer */}
-      <footer className="border-t border-border/40 py-5 text-center text-xs text-muted-foreground/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2.5">
-          <span>CivicAudit AI &bull; Autonomous Public Procurement Oversight</span>
-          <div className="flex items-center gap-3 text-[11px] font-mono text-muted-foreground/60">
-            <span>FastAPI: 8000</span>
-            <span>&bull;</span>
-            <span>Next.js: 3000</span>
-          </div>
+      {/* Forensic Results Dashboard */}
+      {auditResult && !isLoading && (
+        <div className="space-y-6 animate-in fade-in-50 duration-300">
+          {/* Top KPIs & Composite Risk Gauge */}
+          <ExecutiveMetrics dossier={auditResult.dossier} />
+
+          {/* Forensic Visualizer & Interactive Charts */}
+          <AuditCharts dossier={auditResult.dossier} />
+
+          {/* Diagonal Hatched Divider */}
+          <div
+            aria-hidden="true"
+            className="h-4 w-full border-y border-[#d1d5db] dark:border-white/10 hatched-divider"
+          />
+
+          {/* Anomaly Table with Expandable Tribunal Deliberation Cards */}
+          <AnomalyTable findings={auditResult.dossier.findings} />
+
+          {/* Diagonal Hatched Divider */}
+          <div
+            aria-hidden="true"
+            className="h-4 w-full border-y border-[#d1d5db] dark:border-white/10 hatched-divider"
+          />
+
+          {/* Executive Memorandum, Statutory Violations & Advisory */}
+          <LegalAdvisory
+            dossier={auditResult.dossier}
+            markdown={auditResult.markdown}
+          />
+
+          {/* Diagonal Hatched Divider */}
+          <div
+            aria-hidden="true"
+            className="h-4 w-full border-y border-[#d1d5db] dark:border-white/10 hatched-divider"
+          />
+
+          {/* Live Telemetry Log Stream */}
+          <AuditLogs logs={auditResult.logs} />
         </div>
-      </footer>
-
-      {/* Settings Modal */}
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        currentSettings={currentSettings}
-        onSettingsUpdated={(newBrain, newMode) => {
-          setActiveBrain(newBrain);
-          setCouncilMode(newMode);
-        }}
-      />
-    </div>
+      )}
+    </main>
   );
 }

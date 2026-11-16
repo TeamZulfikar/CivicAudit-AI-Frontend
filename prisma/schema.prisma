@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String      @id
+  name          String
+  email         String      @unique
+  emailVerified Boolean     @default(false)
+  image         String?
+  role          String?     @default("user")
+  banned        Boolean?    @default(false)
+  banReason     String?
+  banExpires    DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  audits        AuditRun[]
+
+  @@map("user")
+}
+
+model Session {
+  id             String    @id
+  expiresAt      DateTime
+  token          String    @unique
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  ipAddress      String?
+  userAgent      String?
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  impersonatedBy String?
+
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+
+  @@map("verification")
+}
+
+model AuditRun {
+  id              String    @id @default(cuid())
+  tenderId        String
+  title           String
+  procuringEntity String
+  mode            String    // "sample" | "custom" | "upload"
+  status          String    // "in_progress" | "completed" | "failed"
+  sampleName      String?
+  filename        String?
+  rawText         String?   @db.Text
+  totalQuoted     Float?
+  fairMarket      Float?
+  excessAmount    Float?
+  riskRating      String?   // "CRITICAL" | "HIGH" | "MEDIUM" | "LOW"
+  findingsCount   Int?
+  anomaliesCount  Int?
+  dossier         Json?
+  markdown        String?   @db.Text
+  logs            Json?
+  error           String?   @db.Text
+  userId          String?
+  user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+  @@map("audit_run")
+}

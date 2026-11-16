@@ -111,8 +111,8 @@ export const AnomalyTable: React.FC<AnomalyTableProps> = ({ findings }) => {
       </CardHeader>
 
       <CardContent className="pt-0">
-        <div className="rounded-xl border border-border overflow-hidden">
-          <Table>
+        <div className="rounded-xl border border-border overflow-x-auto">
+          <Table className="min-w-[720px]">
             <TableHeader className="bg-muted/40 font-mono text-[11px] uppercase tracking-wider">
               <TableRow>
                 <TableHead className="py-3 px-3.5">Item Ref</TableHead>
