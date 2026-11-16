@@ -23,11 +23,13 @@ import { cn } from "@/lib/utils";
 interface LiveAuditProgressProps {
   progress: AuditProgressData | null;
   liveLogs: string[];
+  onCancel?: () => void;
 }
 
 export const LiveAuditProgress: React.FC<LiveAuditProgressProps> = ({
   progress,
   liveLogs,
+  onCancel,
 }) => {
   const terminalEndRef = useRef<HTMLDivElement>(null);
 
@@ -75,7 +77,18 @@ export const LiveAuditProgress: React.FC<LiveAuditProgressProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 self-start sm:self-auto">
+          <div className="flex items-center gap-3 self-start sm:self-auto">
+            {onCancel && (
+              <button
+                type="button"
+                onClick={onCancel}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-300 bg-rose-950/50 hover:bg-rose-900/70 border border-rose-500/40 rounded-lg transition-all duration-200 cursor-pointer shadow-sm active:scale-95"
+                title="Immediately halt investigation to prevent token consumption"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
+                <span>Stop Audit</span>
+              </button>
+            )}
             <div className="text-right">
               <span className="text-xl sm:text-2xl font-mono font-bold text-primary">
                 {percentage}%

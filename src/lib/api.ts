@@ -19,12 +19,14 @@ export async function streamAudit(
     filename?: string;
     file_base64?: string;
   },
-  onEvent: (event: StreamEvent) => void
+  onEvent: (event: StreamEvent) => void,
+  signal?: AbortSignal
 ): Promise<AuditResponse> {
   const res = await fetch(`${API_BASE_URL}/api/audit_stream`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
+    signal,
   });
 
   if (!res.ok) {

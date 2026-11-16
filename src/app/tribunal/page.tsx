@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { TenderIngestion } from "@/components/TenderIngestion";
 import { ExecutiveMetrics } from "@/components/ExecutiveMetrics";
@@ -38,6 +38,38 @@ export default function TribunalPage() {
   const [auditResult, setAuditResult] = useState<AuditResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const isMountedRef = useRef(true);
+
+  // Background Processing: Internal navigation continues running;
+  // Abort only fires when user explicitly closes browser tab or clicks "Stop Audit".
+  useEffect(() => {
+    isMountedRef.current = true;
+    const handleBeforeUnload = () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      isMountedRef.current = false;
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, []);
+
+  const handleCancelAudit = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsLoading(false);
+    setLiveLogs((prev) => [
+      ...prev,
+      "[CANCELLED] Investigation aborted by user. Telemetry connection closed and remote agent LLMs terminated to preserve API tokens.",
+    ]);
+  };
+
   // Helper to persist audit run state to PostgreSQL and notify sidebar/vault
   const persistAuditRun = async (
     payload: Record<string, unknown>,
@@ -73,6 +105,9 @@ export default function TribunalPage() {
       anomalies_count: 0,
     });
 
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     let dbAuditId: string | null = null;
     if (isAuthenticated) {
       dbAuditId = await persistAuditRun({
@@ -86,15 +121,23 @@ export default function TribunalPage() {
     }
 
     try {
-      const res = await streamAudit({ mode: "sample", sample }, (ev) => {
-        if (ev.log) {
-          setLiveLogs((prev) => [...prev, ev.log!]);
-        }
-        if (ev.progress) {
-          setLiveProgress(ev.progress);
-        }
-      });
-      setAuditResult(res);
+      const res = await streamAudit(
+        { mode: "sample", sample },
+        (ev) => {
+          if (isMountedRef.current) {
+            if (ev.log) {
+              setLiveLogs((prev) => [...prev, ev.log!]);
+            }
+            if (ev.progress) {
+              setLiveProgress(ev.progress);
+            }
+          }
+        },
+        abortController.signal
+      );
+      if (isMountedRef.current) {
+        setAuditResult(res);
+      }
 
       if (dbAuditId) {
         await persistAuditRun({
@@ -114,8 +157,20 @@ export default function TribunalPage() {
         });
       }
     } catch (err: unknown) {
+      if (abortController.signal.aborted) {
+        if (dbAuditId) {
+          await persistAuditRun({
+            id: dbAuditId,
+            status: "failed",
+            error: "Investigation stopped by user to preserve API tokens.",
+          });
+        }
+        return;
+      }
       const msg = err instanceof Error ? err.message : "Audit execution failed";
-      setError(msg);
+      if (isMountedRef.current) {
+        setError(msg);
+      }
       if (dbAuditId) {
         await persistAuditRun({
           id: dbAuditId,
@@ -124,7 +179,9 @@ export default function TribunalPage() {
         });
       }
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -145,6 +202,9 @@ export default function TribunalPage() {
       total_items: 0,
       anomalies_count: 0,
     });
+
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
 
     let dbAuditId: string | null = null;
     if (isAuthenticated) {
@@ -168,15 +228,20 @@ export default function TribunalPage() {
           raw_text: text,
         },
         (ev) => {
-          if (ev.log) {
-            setLiveLogs((prev) => [...prev, ev.log!]);
-          }
-          if (ev.progress) {
-            setLiveProgress(ev.progress);
+          if (isMountedRef.current) {
+            if (ev.log) {
+              setLiveLogs((prev) => [...prev, ev.log!]);
+            }
+            if (ev.progress) {
+              setLiveProgress(ev.progress);
+            }
           }
         },
+        abortController.signal
       );
-      setAuditResult(res);
+      if (isMountedRef.current) {
+        setAuditResult(res);
+      }
 
       if (dbAuditId) {
         await persistAuditRun({
@@ -196,8 +261,20 @@ export default function TribunalPage() {
         });
       }
     } catch (err: unknown) {
+      if (abortController.signal.aborted) {
+        if (dbAuditId) {
+          await persistAuditRun({
+            id: dbAuditId,
+            status: "failed",
+            error: "Investigation stopped by user to preserve API tokens.",
+          });
+        }
+        return;
+      }
       const msg = err instanceof Error ? err.message : "Custom audit failed";
-      setError(msg);
+      if (isMountedRef.current) {
+        setError(msg);
+      }
       if (dbAuditId) {
         await persistAuditRun({
           id: dbAuditId,
@@ -206,7 +283,9 @@ export default function TribunalPage() {
         });
       }
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -227,6 +306,9 @@ export default function TribunalPage() {
       total_items: 0,
       anomalies_count: 0,
     });
+
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
 
     let dbAuditId: string | null = null;
     if (isAuthenticated) {
@@ -259,15 +341,20 @@ export default function TribunalPage() {
           tender_id: tenderId,
         },
         (ev) => {
-          if (ev.log) {
-            setLiveLogs((prev) => [...prev, ev.log!]);
-          }
-          if (ev.progress) {
-            setLiveProgress(ev.progress);
+          if (isMountedRef.current) {
+            if (ev.log) {
+              setLiveLogs((prev) => [...prev, ev.log!]);
+            }
+            if (ev.progress) {
+              setLiveProgress(ev.progress);
+            }
           }
         },
+        abortController.signal
       );
-      setAuditResult(res);
+      if (isMountedRef.current) {
+        setAuditResult(res);
+      }
 
       if (dbAuditId) {
         await persistAuditRun({
@@ -287,8 +374,20 @@ export default function TribunalPage() {
         });
       }
     } catch (err: unknown) {
+      if (abortController.signal.aborted) {
+        if (dbAuditId) {
+          await persistAuditRun({
+            id: dbAuditId,
+            status: "failed",
+            error: "Investigation stopped by user to preserve API tokens.",
+          });
+        }
+        return;
+      }
       const msg = err instanceof Error ? err.message : "Document audit failed";
-      setError(msg);
+      if (isMountedRef.current) {
+        setError(msg);
+      }
       if (dbAuditId) {
         await persistAuditRun({
           id: dbAuditId,
@@ -297,7 +396,9 @@ export default function TribunalPage() {
         });
       }
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -399,7 +500,11 @@ export default function TribunalPage() {
 
       {/* Real-Time Live Streaming Progress Tracker */}
       {isLoading && (
-        <LiveAuditProgress progress={liveProgress} liveLogs={liveLogs} />
+        <LiveAuditProgress
+          progress={liveProgress}
+          liveLogs={liveLogs}
+          onCancel={handleCancelAudit}
+        />
       )}
 
       {/* Error notification */}
