@@ -11,6 +11,7 @@ import {
   SlidersHorizontal,
   UserPlus,
   Database,
+  Users,
 } from "lucide-react";
 import { API_BASE_URL } from "@/lib/api";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -267,6 +268,18 @@ export const Header: React.FC<HeaderProps> = ({
                         <SlidersHorizontal className="w-3.5 h-3.5 text-primary" />
                         <span>AI Council & Settings</span>
                       </button>
+                    )}
+
+                    {/* Admin Action: User Registry */}
+                    {isAdmin && (
+                      <Link
+                        href="/admin/users"
+                        onClick={() => setDropdownOpen(false)}
+                        className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-foreground/90 hover:text-foreground hover:bg-muted/60 rounded-md transition-colors cursor-pointer"
+                      >
+                        <Users className="w-3.5 h-3.5 text-[#19c7e8]" />
+                        <span>User Registry</span>
+                      </Link>
                     )}
 
                     {/* Switch Account */}

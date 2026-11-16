@@ -19,6 +19,7 @@ import {
   ArrowRight,
   Database,
   Command,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -226,6 +227,16 @@ export const AdminDossierVault: React.FC = () => {
                   <Plus className="w-3.5 h-3.5" />
                   <span>New Tender Investigation</span>
                 </button>
+
+                <Link
+                  href="/admin/users"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center justify-center gap-1.5 rounded-[3px] border border-white/15 bg-white/5 text-white px-3 py-2 font-mono text-xs hover:bg-white/10 transition-colors"
+                  title="User Registry"
+                >
+                  <Users className="w-3.5 h-3.5 text-[#19c7e8]" />
+                  <span className="hidden sm:inline">Users</span>
+                </Link>
               </div>
 
               {/* Search Box */}
