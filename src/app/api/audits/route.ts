@@ -9,12 +9,11 @@ export async function GET() {
       headers: await headers(),
     });
 
-    // Check admin authorization
-    const userRole = (session?.user as { role?: string } | undefined)?.role;
-    if (!session || userRole !== "admin") {
+    // Allow both authenticated roles (admin and user)
+    if (!session) {
       return NextResponse.json(
-        { error: "Unauthorized. Admin privileges required." },
-        { status: 403 }
+        { error: "Unauthorized. Authentication required to access audit records." },
+        { status: 401 }
       );
     }
 
@@ -55,11 +54,11 @@ export async function POST(req: Request) {
       headers: await headers(),
     });
 
-    const userRole = (session?.user as { role?: string } | undefined)?.role;
-    if (!session || userRole !== "admin") {
+    // Allow both authenticated roles (admin and user) to persist audits
+    if (!session) {
       return NextResponse.json(
-        { error: "Unauthorized. Only administrators can save audit records." },
-        { status: 403 }
+        { error: "Unauthorized. Authentication required to save audit records." },
+        { status: 401 }
       );
     }
 

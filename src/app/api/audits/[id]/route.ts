@@ -14,11 +14,11 @@ export async function GET(req: Request, { params }: RouteParams) {
       headers: await headers(),
     });
 
-    const userRole = (session?.user as { role?: string } | undefined)?.role;
-    if (!session || userRole !== "admin") {
+    // Allow both authenticated roles (admin and user) to view audit dossier
+    if (!session) {
       return NextResponse.json(
-        { error: "Unauthorized. Admin privileges required." },
-        { status: 403 }
+        { error: "Unauthorized. Authentication required to view audit dossier." },
+        { status: 401 }
       );
     }
 
@@ -56,11 +56,11 @@ export async function DELETE(req: Request, { params }: RouteParams) {
       headers: await headers(),
     });
 
-    const userRole = (session?.user as { role?: string } | undefined)?.role;
-    if (!session || userRole !== "admin") {
+    // Allow both authenticated roles (admin and user) to view audit dossier
+    if (!session) {
       return NextResponse.json(
-        { error: "Unauthorized. Admin privileges required." },
-        { status: 403 }
+        { error: "Unauthorized. Authentication required to view audit dossier." },
+        { status: 401 }
       );
     }
 

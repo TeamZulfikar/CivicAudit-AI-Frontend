@@ -131,7 +131,8 @@ export const Header: React.FC<HeaderProps> = ({
             >
               Statutory Standards
             </Link>
-            {isAdmin && (
+            {/* Accessible to both user and admin roles */}
+            {session && (
               <button
                 type="button"
                 onClick={sidebar?.toggleSidebar}
@@ -237,23 +238,21 @@ export const Header: React.FC<HeaderProps> = ({
 
                     <div className="my-1 border-t border-border/50" />
 
-                    {/* Admin Action: Dossier Vault */}
-                    {isAdmin && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setDropdownOpen(false);
-                          sidebar?.toggleSidebar();
-                        }}
-                        className="w-full flex items-center justify-between px-2.5 py-1.5 text-xs text-foreground/90 hover:text-foreground hover:bg-muted/60 rounded-md transition-colors cursor-pointer text-left"
-                      >
-                        <span className="flex items-center gap-2">
-                          <Database className="w-3.5 h-3.5 text-[#19c7e8]" />
-                          <span>Dossier Vault</span>
-                        </span>
-                        <span className="text-[10px] font-mono text-muted-foreground">⌘K</span>
-                      </button>
-                    )}
+                    {/* Action: Dossier Vault for both roles */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDropdownOpen(false);
+                        sidebar?.toggleSidebar();
+                      }}
+                      className="w-full flex items-center justify-between px-2.5 py-1.5 text-xs text-foreground/90 hover:text-foreground hover:bg-muted/60 rounded-md transition-colors cursor-pointer text-left"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Database className="w-3.5 h-3.5 text-[#19c7e8]" />
+                        <span>Dossier Vault</span>
+                      </span>
+                      <span className="text-[10px] font-mono text-muted-foreground">⌘K</span>
+                    </button>
 
                     {/* Admin Action: Council Settings */}
                     {isAdmin && (

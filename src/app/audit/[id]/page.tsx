@@ -270,7 +270,7 @@ export default function AuditDetailPage() {
             </Button>
           )}
 
-          {isAdmin && (
+          {session?.user && (
             <Button
               variant="outline"
               size="sm"
