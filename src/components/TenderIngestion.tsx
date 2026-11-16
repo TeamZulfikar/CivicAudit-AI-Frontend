@@ -1,7 +1,22 @@
 "use client";
 
 import React, { useState } from "react";
-import { UploadCloud, FileText, Database, ArrowRight, Loader2, Sparkles, ChevronDown, ChevronUp, FileCheck } from "lucide-react";
+import Link from "next/link";
+import {
+  UploadCloud,
+  FileText,
+  Database,
+  ArrowRight,
+  Loader2,
+  Sparkles,
+  ChevronDown,
+  ChevronUp,
+  FileCheck,
+  Lock,
+  LogIn,
+  ShieldAlert,
+  ShieldCheck,
+} from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +29,8 @@ interface TenderIngestionProps {
   onAuditCustom: (title: string, entity: string, tenderId: string, text: string) => Promise<void>;
   onUploadAndAudit: (file: File, title: string, entity: string, tenderId: string) => Promise<void>;
   isLoading: boolean;
+  userRole?: string | null;
+  isAuthenticated?: boolean;
 }
 
 type IngestionTab = "samples" | "upload" | "paste";
@@ -23,6 +40,8 @@ export const TenderIngestion: React.FC<TenderIngestionProps> = ({
   onAuditCustom,
   onUploadAndAudit,
   isLoading,
+  userRole,
+  isAuthenticated = false,
 }) => {
   const [activeTab, setActiveTab] = useState<IngestionTab>("samples");
   const [title, setTitle] = useState<string>("Municipal Procurement Docket");
@@ -31,6 +50,10 @@ export const TenderIngestion: React.FC<TenderIngestionProps> = ({
   const [rawText, setRawText] = useState<string>("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [showMetadata, setShowMetadata] = useState<boolean>(false);
+
+  const isAdmin = isAuthenticated && userRole === "admin";
+  const isRegularUser = isAuthenticated && userRole !== "admin";
+  const isGuest = !isAuthenticated;
 
   const sampleBoq = `Item 1: 20-Ton Hydraulic Crawler Excavator - Qty: 2 - Quoted: $58,000.00 each
 Item 2: Heavy-Duty Tandem Road Roller Compactor - Qty: 3 - Quoted: $42,500.00 each
@@ -75,6 +98,49 @@ Item 5: 150W Commercial Outdoor LED Street Luminaires - Qty: 120 units - Quoted:
   return (
     <Card className="border-border/50 bg-card/70 shadow-sm backdrop-blur-md overflow-hidden">
       <CardContent className="p-5 sm:p-6 space-y-6">
+        {/* Role-Based Access Control Notice Banner */}
+        {isGuest && (
+          <div className="p-3 rounded-xl bg-muted/40 border border-border/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Lock className="w-4 h-4 text-primary shrink-0" />
+              <span>
+                <strong className="text-foreground">Guest Mode:</strong> You can explore benchmark specifications. Sign in with an <strong className="text-primary font-mono">admin</strong> account to upload documents and trigger audits.
+              </span>
+            </div>
+            <Link href="/login">
+              <Button size="xs" className="h-7 text-xs gap-1 font-semibold cursor-pointer">
+                <LogIn className="w-3 h-3" />
+                <span>Sign In to Audit</span>
+              </Button>
+            </Link>
+          </div>
+        )}
+
+        {isRegularUser && (
+          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center gap-2.5 text-xs text-amber-500">
+            <ShieldAlert className="w-4 h-4 shrink-0" />
+            <div>
+              <span className="font-semibold">Read-Only Permission (Role: {userRole || "user"}):</span>
+              <p className="text-amber-500/90 text-[11px] mt-0.5">
+                Regular users can inspect public benchmark items. Only designated Administrators have permission to upload files, supply custom contracts, or convene autonomous tribunal audits.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {isAdmin && (
+          <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-between text-xs text-primary">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4" />
+              <span className="font-semibold">Admin Authorization Active</span>
+              <span className="text-[11px] text-muted-foreground hidden sm:inline">&bull; Full upload and tribunal convening privileges enabled.</span>
+            </div>
+            <Badge variant="outline" className="text-[9px] font-mono uppercase bg-background border-primary/30">
+              Admin Verified
+            </Badge>
+          </div>
+        )}
+
         {/* Modern 3-Way Mode Tabs Selector */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {tabsConfig.map((tab) => {
@@ -88,38 +154,36 @@ Item 5: 150W Commercial Outdoor LED Street Luminaires - Qty: 120 units - Quoted:
                 className={cn(
                   "relative flex items-center gap-3.5 p-3.5 rounded-xl border text-left transition-all duration-150 cursor-pointer outline-none select-none",
                   isSelected
-                    ? "border-primary/80 bg-primary/10 shadow-[0_0_15px_rgba(56,189,248,0.12)] ring-1 ring-primary/40"
-                    : "border-border/50 bg-card/40 hover:bg-card hover:border-border/80 text-muted-foreground hover:text-foreground"
+                    ? "bg-primary/10 border-primary shadow-sm"
+                    : "border-border/60 hover:border-border hover:bg-muted/40"
                 )}
               >
                 <div
                   className={cn(
-                    "w-9 h-9 rounded-lg flex items-center justify-center shrink-0 border transition-colors",
+                    "w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors",
                     isSelected
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-muted/40 text-muted-foreground border-border/40"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground"
                   )}
                 >
                   <Icon className="w-4 h-4" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <span
-                      className={cn(
-                        "text-xs sm:text-sm font-semibold tracking-tight",
-                        isSelected ? "text-foreground" : "text-muted-foreground"
-                      )}
-                    >
-                      {tab.label}
-                    </span>
-                    {isSelected && (
-                      <span className="w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_rgba(56,189,248,0.8)]" />
+                  <div
+                    className={cn(
+                      "text-xs font-semibold tracking-tight truncate",
+                      isSelected ? "text-primary" : "text-foreground"
                     )}
+                  >
+                    {tab.label}
                   </div>
-                  <p className="text-[11px] text-muted-foreground/80 mt-0.5 truncate">
+                  <div className="text-[11px] text-muted-foreground truncate mt-0.5">
                     {tab.sublabel}
-                  </p>
+                  </div>
                 </div>
+                {isSelected && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                )}
               </button>
             );
           })}
@@ -127,79 +191,67 @@ Item 5: 150W Commercial Outdoor LED Street Luminaires - Qty: 120 units - Quoted:
 
         {/* TAB 1 CONTENT: Preloaded Dockets */}
         {activeTab === "samples" && (
-          <div className="space-y-3 pt-1 animate-in fade-in-50 duration-200">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5">
-              {[
-                {
-                  file: "test_procurement_tender.json",
-                  tag: "Healthcare IT",
-                  title: "Digital Health Center IT",
-                  desc: "Medical workstations, DICOM displays, 10kVA UPS, and inflated USB/Cat6 cables.",
-                  highlight: "Contains extreme anomalies",
-                },
-                {
-                  file: "municipal_it_tender_2025.json",
-                  tag: "IT & Hardware",
-                  title: "Smart City Administration",
-                  desc: "Core i7 laptops, 27\" monitors, Cisco network switches, and ergonomic office chairs.",
-                  highlight: "Standard municipal BOQ",
-                },
-                {
-                  file: "civil_works_lighting_2025.json",
-                  tag: "Civil Works",
-                  title: "Highway LED Lighting",
-                  desc: "Solar LED luminaires, 50kVA diesel generators, PTZ cameras, and Portland cement.",
-                  highlight: "Heavy infrastructure",
-                },
-                {
-                  file: "real_world_tender.csv",
-                  tag: "CSV Spreadsheet",
-                  title: "Government BOQ (CSV)",
-                  desc: "Header-agnostic spreadsheet with mixed pricing, monitors, and laser printers.",
-                  highlight: "Raw tabular format",
-                },
-              ].map((sample, idx) => (
-                <div
-                  key={idx}
-                  className="group relative flex flex-col justify-between p-4 rounded-xl border border-border/50 bg-card/40 hover:bg-card hover:border-primary/40 transition duration-200"
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Badge variant="outline" className="text-[10px] font-mono px-2 py-0 border-border/70 text-muted-foreground">
-                        {sample.tag}
-                      </Badge>
-                      <span className="text-[10px] text-primary font-medium">{sample.highlight}</span>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-semibold text-foreground tracking-tight group-hover:text-primary transition-colors">
-                        {sample.title}
-                      </h4>
-                      <p className="text-xs text-muted-foreground/90 mt-1 line-clamp-2 leading-relaxed">
-                        {sample.desc}
-                      </p>
-                    </div>
-                  </div>
+          <div className="space-y-4 pt-1 animate-in fade-in-50 duration-200">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                Select Tested Procurement Case
+              </label>
+              <select
+                id="sampleSelect"
+                className="w-full bg-background border border-border/80 text-foreground rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer font-sans"
+                defaultValue="municipal_it_tender_2025.json"
+              >
+                <option value="municipal_it_tender_2025.json">
+                  Municipal Official Procurement Docket (TND-2025-089) - IT Hardware [High Corruption Risk]
+                </option>
+                <option value="clean_public_works_tender.json">
+                  Clean Highway Overpass Construction (HWY-2025-042) - Fully Compliant Reference
+                </option>
+                <option value="hospital_medical_equipment_2025.json">
+                  Regional Medical Center ICU Ventilators (MED-2025-014) - Healthcare Procurement
+                </option>
+                <option value="school_district_construction_2025.json">
+                  Civic School District Expansion (EDU-2025-091) - Educational Facility Civil Works
+                </option>
+              </select>
+            </div>
 
-                  <div className="pt-4 mt-2 border-t border-border/40">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full h-8 text-xs gap-1.5 font-medium border-border/60 hover:bg-primary hover:text-primary-foreground hover:border-primary transition cursor-pointer"
-                      onClick={() => onAuditPreloaded(sample.file)}
-                      disabled={isLoading}
-                    >
-                      {isLoading ? (
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                      ) : (
-                        <>
-                          <span>Audit Docket</span>
-                          <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              ))}
+            <div className="flex justify-end pt-1">
+              {isAdmin ? (
+                <Button
+                  onClick={() => {
+                    const sel = (document.getElementById("sampleSelect") as HTMLSelectElement).value;
+                    onAuditPreloaded(sel);
+                  }}
+                  disabled={isLoading}
+                  className="gap-2 h-9 px-4 text-xs font-medium cursor-pointer"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Convening Tribunal...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Convene Autonomous Tribunal</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </>
+                  )}
+                </Button>
+              ) : isGuest ? (
+                <Link href="/login">
+                  <Button variant="outline" className="gap-2 h-9 px-4 text-xs font-medium cursor-pointer border-primary/40 text-primary">
+                    <LogIn className="w-3.5 h-3.5" />
+                    <span>Sign in to Convene Tribunal</span>
+                  </Button>
+                </Link>
+              ) : (
+                <Button disabled variant="outline" className="gap-2 h-9 px-4 text-xs font-medium opacity-60">
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Admin Privileges Required to Audit</span>
+                </Button>
+              )}
             </div>
           </div>
         )}
@@ -210,22 +262,25 @@ Item 5: 150W Commercial Outdoor LED Street Luminaires - Qty: 120 units - Quoted:
             <div
               onDragOver={(e) => e.preventDefault()}
               onDrop={handleDrop}
-              className={`border-2 border-dashed rounded-xl p-8 sm:p-10 text-center transition-all cursor-pointer ${
-                selectedFile
-                  ? "border-primary/50 bg-primary/5"
-                  : "border-border/60 hover:border-primary/40 hover:bg-muted/15 bg-muted/5"
-              }`}
+              className={cn(
+                "border-2 border-dashed rounded-xl p-8 text-center transition-colors bg-muted/10",
+                !isAdmin ? "opacity-70 cursor-not-allowed border-border/40" : "border-border/80 hover:border-primary/60 cursor-pointer"
+              )}
             >
               <input
                 type="file"
-                id="fileInput"
-                onChange={handleFileChange}
-                accept=".pdf,.xlsx,.xls,.csv,.json,.txt"
+                id="fileUploadInput"
                 className="hidden"
+                accept=".pdf,.docx,.xlsx,.xls,.csv,.json,.txt"
+                onChange={handleFileChange}
+                disabled={!isAdmin}
               />
-              <label htmlFor="fileInput" className="cursor-pointer block space-y-2.5">
-                <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto border border-primary/20">
-                  {selectedFile ? <FileCheck className="w-5 h-5 text-emerald-400" /> : <UploadCloud className="w-5 h-5" />}
+              <label
+                htmlFor="fileUploadInput"
+                className={cn("flex flex-col items-center justify-center space-y-2", !isAdmin ? "cursor-not-allowed" : "cursor-pointer")}
+              >
+                <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                  <UploadCloud className="w-6 h-6" />
                 </div>
 
                 {selectedFile ? (
@@ -271,6 +326,7 @@ Item 5: 150W Commercial Outdoor LED Street Luminaires - Qty: 120 units - Quoted:
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
                       className="text-xs h-8"
+                      disabled={!isAdmin}
                     />
                   </div>
                   <div>
@@ -280,6 +336,7 @@ Item 5: 150W Commercial Outdoor LED Street Luminaires - Qty: 120 units - Quoted:
                       value={entity}
                       onChange={(e) => setEntity(e.target.value)}
                       className="text-xs h-8"
+                      disabled={!isAdmin}
                     />
                   </div>
                   <div>
@@ -289,6 +346,7 @@ Item 5: 150W Commercial Outdoor LED Street Luminaires - Qty: 120 units - Quoted:
                       value={tenderId}
                       onChange={(e) => setTenderId(e.target.value)}
                       className="text-xs font-mono h-8"
+                      disabled={!isAdmin}
                     />
                   </div>
                 </div>
@@ -296,24 +354,38 @@ Item 5: 150W Commercial Outdoor LED Street Luminaires - Qty: 120 units - Quoted:
             </div>
 
             <div className="flex justify-end pt-2">
-              <Button
-                onClick={() => selectedFile && onUploadAndAudit(selectedFile, title, entity, tenderId)}
-                disabled={isLoading || !selectedFile}
-                className="gap-2 h-9 px-4 text-xs font-medium cursor-pointer"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Deliberating...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Execute Forensic Audit</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </>
-                )}
-              </Button>
+              {isAdmin ? (
+                <Button
+                  onClick={() => selectedFile && onUploadAndAudit(selectedFile, title, entity, tenderId)}
+                  disabled={isLoading || !selectedFile}
+                  className="gap-2 h-9 px-4 text-xs font-medium cursor-pointer"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Deliberating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Execute Forensic Audit</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </>
+                  )}
+                </Button>
+              ) : isGuest ? (
+                <Link href="/login">
+                  <Button variant="outline" className="gap-2 h-9 px-4 text-xs font-medium cursor-pointer border-primary/40 text-primary">
+                    <LogIn className="w-3.5 h-3.5" />
+                    <span>Sign in to Upload & Audit</span>
+                  </Button>
+                </Link>
+              ) : (
+                <Button disabled variant="outline" className="gap-2 h-9 px-4 text-xs font-medium opacity-60">
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Admin Upload Privileges Required</span>
+                </Button>
+              )}
             </div>
           </div>
         )}
@@ -338,28 +410,43 @@ Item 5: 150W Commercial Outdoor LED Street Luminaires - Qty: 120 units - Quoted:
                 onChange={(e) => setRawText(e.target.value)}
                 placeholder="Paste items with quantities and quoted rates (e.g., '10x Enterprise Core i7 Workstations @ $2,450.00 each')..."
                 className="font-mono text-xs leading-relaxed"
+                disabled={!isAdmin}
               />
             </div>
 
             <div className="flex justify-end pt-1">
-              <Button
-                onClick={() => rawText.trim() && onAuditCustom(title, entity, tenderId, rawText)}
-                disabled={isLoading || !rawText.trim()}
-                className="gap-2 h-9 px-4 text-xs font-medium cursor-pointer"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Auditing Items...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Audit Custom Text</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </>
-                )}
-              </Button>
+              {isAdmin ? (
+                <Button
+                  onClick={() => rawText.trim() && onAuditCustom(title, entity, tenderId, rawText)}
+                  disabled={isLoading || !rawText.trim()}
+                  className="gap-2 h-9 px-4 text-xs font-medium cursor-pointer"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Auditing Items...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Audit Custom Text</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </>
+                  )}
+                </Button>
+              ) : isGuest ? (
+                <Link href="/login">
+                  <Button variant="outline" className="gap-2 h-9 px-4 text-xs font-medium cursor-pointer border-primary/40 text-primary">
+                    <LogIn className="w-3.5 h-3.5" />
+                    <span>Sign in to Audit Custom Text</span>
+                  </Button>
+                </Link>
+              ) : (
+                <Button disabled variant="outline" className="gap-2 h-9 px-4 text-xs font-medium opacity-60">
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Admin Privileges Required to Audit</span>
+                </Button>
+              )}
             </div>
           </div>
         )}
