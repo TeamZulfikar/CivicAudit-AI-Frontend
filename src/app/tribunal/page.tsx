@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { TenderIngestion } from "@/components/TenderIngestion";
 import { ExecutiveMetrics } from "@/components/ExecutiveMetrics";
 import { AuditCharts } from "@/components/AuditCharts";
@@ -19,13 +20,15 @@ import {
   ArrowLeft,
   Scale,
   Sparkles,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { authClient } from "@/lib/auth-client";
 
 export default function TribunalPage() {
-  const { data: session } = authClient.useSession();
+  const router = useRouter();
+  const { data: session, isPending: sessionPending } = authClient.useSession();
   const userRole =
     (session?.user as { role?: string } | undefined)?.role || null;
   const isAuthenticated = !!session?.user;
@@ -93,6 +96,10 @@ export default function TribunalPage() {
   };
 
   const handleAuditPreloaded = async (sample: string) => {
+    if (!isAuthenticated) {
+      router.push("/login?callbackUrl=/tribunal");
+      return;
+    }
     setIsLoading(true);
     setError(null);
     setLiveLogs([]);
@@ -191,6 +198,10 @@ export default function TribunalPage() {
     tenderId: string,
     text: string,
   ) => {
+    if (!isAuthenticated) {
+      router.push("/login?callbackUrl=/tribunal");
+      return;
+    }
     setIsLoading(true);
     setError(null);
     setLiveLogs([]);
@@ -295,6 +306,10 @@ export default function TribunalPage() {
     entity: string,
     tenderId: string,
   ) => {
+    if (!isAuthenticated) {
+      router.push("/login?callbackUrl=/tribunal");
+      return;
+    }
     setIsLoading(true);
     setError(null);
     setLiveLogs([]);
@@ -422,6 +437,34 @@ export default function TribunalPage() {
     a.click();
     document.body.removeChild(a);
   };
+
+  if (!sessionPending && !isAuthenticated) {
+    return (
+      <main className="max-w-md mx-auto py-20 px-4 text-center">
+        <Card className="p-8 border-border/80 bg-card/80 backdrop-blur-md space-y-4">
+          <div className="w-12 h-12 rounded-full bg-primary/10 text-primary mx-auto flex items-center justify-center">
+            <Lock className="w-6 h-6" />
+          </div>
+          <h2 className="text-lg font-bold text-foreground">Authentication Required</h2>
+          <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+            You must be signed in to an authorized auditor or administrator account to convene tribunal audits, upload tender dockets, and record findings.
+          </p>
+          <div className="pt-2 flex flex-col gap-2">
+            <Link href="/login?callbackUrl=/tribunal">
+              <Button size="sm" className="w-full text-xs font-semibold cursor-pointer">
+                Sign In to Convene Tribunal
+              </Button>
+            </Link>
+            <Link href="/">
+              <Button variant="outline" size="sm" className="w-full text-xs cursor-pointer">
+                Return to Portal
+              </Button>
+            </Link>
+          </div>
+        </Card>
+      </main>
+    );
+  }
 
   return (
     <main className="max-w-7xl w-full mx-auto px-3 sm:px-6 py-5 sm:py-8 space-y-6 font-sans">

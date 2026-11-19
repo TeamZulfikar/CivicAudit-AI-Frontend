@@ -54,8 +54,8 @@ export const TenderIngestion: React.FC<TenderIngestionProps> = ({
   const isAdmin = isAuthenticated && userRole === "admin";
   const isRegularUser = isAuthenticated && userRole !== "admin";
   const isGuest = !isAuthenticated;
-  // Both admin and regular user roles have full forensic tribunal execution access
-  const canAudit = true;
+  // Authentication required to convene and run forensic tribunal audits
+  const canAudit = isAuthenticated;
 
   const sampleBoq = `Item 1: 20-Ton Hydraulic Crawler Excavator - Qty: 2 - Quoted: $58,000.00 each
 Item 2: Heavy-Duty Tandem Road Roller Compactor - Qty: 3 - Quoted: $42,500.00 each
@@ -102,17 +102,17 @@ Item 5: 150W Commercial Outdoor LED Street Luminaires - Qty: 120 units - Quoted:
       <CardContent className="p-5 sm:p-6 space-y-6">
         {/* Role-Based Access Control Notice Banner */}
         {isGuest && (
-          <div className="p-3 rounded-xl bg-muted/40 border border-border/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-2 text-muted-foreground">
+          <div className="p-3.5 rounded-xl bg-muted/40 border border-border/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2.5 text-muted-foreground">
               <Lock className="w-4 h-4 text-primary shrink-0" />
               <span>
-                <strong className="text-foreground">Auditor Sandbox:</strong> You can convene tribunal benchmarks in guest mode. Sign in to your account to persist dossiers into the PostgreSQL vault.
+                <strong className="text-foreground">Authentication Required:</strong> You must be signed in to an authorized account to convene tribunal audits, upload tender dockets, and record findings.
               </span>
             </div>
-            <Link href="/login">
-              <Button size="xs" variant="outline" className="h-7 text-xs gap-1 font-semibold cursor-pointer border-border/80">
+            <Link href="/login?callbackUrl=/tribunal">
+              <Button size="xs" className="h-7 text-xs gap-1.5 font-semibold cursor-pointer shrink-0">
                 <LogIn className="w-3 h-3" />
-                <span>Sign In to Save Vault</span>
+                <span>Sign In to Audit</span>
               </Button>
             </Link>
           </div>
@@ -243,7 +243,7 @@ Item 5: 150W Commercial Outdoor LED Street Luminaires - Qty: 120 units - Quoted:
                   )}
                 </Button>
               ) : (
-                <Link href="/login">
+                <Link href="/login?callbackUrl=/tribunal">
                   <Button variant="outline" className="gap-2 h-9 px-4 text-xs font-medium cursor-pointer border-primary/40 text-primary">
                     <LogIn className="w-3.5 h-3.5" />
                     <span>Sign in to Convene Tribunal</span>
@@ -259,8 +259,13 @@ Item 5: 150W Commercial Outdoor LED Street Luminaires - Qty: 120 units - Quoted:
           <div className="space-y-4 pt-1 animate-in fade-in-50 duration-200">
             <div
               onDragOver={(e) => e.preventDefault()}
-              onDrop={handleDrop}
-              className="border-2 border-dashed rounded-xl p-8 text-center transition-colors bg-muted/10 border-border/80 hover:border-primary/60 cursor-pointer"
+              onDrop={canAudit ? handleDrop : undefined}
+              className={cn(
+                "border-2 border-dashed rounded-xl p-8 text-center transition-colors bg-muted/10",
+                !canAudit
+                  ? "border-border/40 opacity-70 cursor-not-allowed"
+                  : "border-border/80 hover:border-primary/60 cursor-pointer"
+              )}
             >
               <input
                 type="file"
@@ -268,10 +273,14 @@ Item 5: 150W Commercial Outdoor LED Street Luminaires - Qty: 120 units - Quoted:
                 className="hidden"
                 accept=".pdf,.docx,.xlsx,.xls,.csv,.json,.txt"
                 onChange={handleFileChange}
+                disabled={!canAudit}
               />
               <label
-                htmlFor="fileUploadInput"
-                className="flex flex-col items-center justify-center space-y-2 cursor-pointer"
+                htmlFor={canAudit ? "fileUploadInput" : undefined}
+                className={cn(
+                  "flex flex-col items-center justify-center space-y-2",
+                  !canAudit ? "cursor-not-allowed" : "cursor-pointer"
+                )}
               >
                 <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center">
                   <UploadCloud className="w-6 h-6" />
@@ -368,7 +377,7 @@ Item 5: 150W Commercial Outdoor LED Street Luminaires - Qty: 120 units - Quoted:
                   )}
                 </Button>
               ) : (
-                <Link href="/login">
+                <Link href="/login?callbackUrl=/tribunal">
                   <Button variant="outline" className="gap-2 h-9 px-4 text-xs font-medium cursor-pointer border-primary/40 text-primary">
                     <LogIn className="w-3.5 h-3.5" />
                     <span>Sign in to Upload & Audit</span>
@@ -424,7 +433,7 @@ Item 5: 150W Commercial Outdoor LED Street Luminaires - Qty: 120 units - Quoted:
                   )}
                 </Button>
               ) : (
-                <Link href="/login">
+                <Link href="/login?callbackUrl=/tribunal">
                   <Button variant="outline" className="gap-2 h-9 px-4 text-xs font-medium cursor-pointer border-primary/40 text-primary">
                     <LogIn className="w-3.5 h-3.5" />
                     <span>Sign in to Audit Custom Text</span>
